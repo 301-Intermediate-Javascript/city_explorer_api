@@ -10,6 +10,8 @@ const app = express();
 
 app.use(cors());
 
+//Location Get
+
 app.get('/location', (request, response) => {
     const locationData = require('./data/location.json');
     const frontEndRequest = request.query.city;
@@ -21,13 +23,32 @@ app.get('/location', (request, response) => {
     console.log(locationObject);
     response.send(locationObject);
 })
+
 // Location Constructor 
 
 function Location(object, search_query){
     this.longitude = object.lon;
     this.latitude = object.lat;
     this.formatted_query = object.display_name;
-    this.search_query = search_query
+    this.search_query = search_query;
+}
+
+// Weather Get
+
+app.get('/weather', (request, response) => {
+    const weatherData = require('./data/weather.json');
+    const weatherArray = [];
+    weatherData.data.forEach(value => {
+        weatherArray.push(new Weather(value));
+    })
+    response.send(weatherArray);
+})
+
+// Weather Constructor
+
+function Weather(object) {
+    this.forecast = object.weather.description;
+    this.time = new Date(object.ts * 1000).toDateString();
 }
 // Run Server
 
