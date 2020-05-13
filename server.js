@@ -64,7 +64,7 @@ function Trail(object) {
 function locationCallBack(request, response) {
   const geoUrl = `https://us1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${request.query.city}&format=json`;
   const sqlQuery = 'SELECT * FROM locations WHERE search_query=$1';
-  const sqlValues = [cityToBeSearced];
+  const sqlValues = [request.query.city];
   client.query(sqlQuery, sqlValues)
   .then(results => {
 
