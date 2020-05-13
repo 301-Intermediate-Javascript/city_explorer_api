@@ -1,7 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const superAgent = require('superagent');
+const pg = require('pg');
 require('dotenv').config();
+
 
 // Global Variables
 
@@ -11,7 +13,9 @@ const app = express();
 // Configuration
 
 app.use(cors());
-
+const client = new pg.Client(process.env.DATABASE_URL);
+client.on('error', console.error);
+client.connect();
 //Location Get
 
 app.get('/location', locationCallBack)
@@ -59,12 +63,23 @@ function Trail(object) {
 // Location
 function locationCallBack(request, response) {
   const geoUrl = `https://us1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${request.query.city}&format=json`;
-  superAgent.get(geoUrl)
-    .then(city => {
-      const location = new Location(city.body[0], request.query.city)
-      response.send(location)
-    }
-    ).catch(error => errors(error, response))
+  const sqlQuery = 'SELECT * FROM locations WHERE search_query=$1';
+  const sqlValues = [cityToBeSearced];
+  client.query(sqlQuery, sqlValues)
+  .then(results => {
+
+    if(results.rowCount > 0){
+      response.send(results.rows[0])
+    }else {
+      superAgent.get(geoUrl)
+          .then(city => {
+        const location = new Location(city.body[0], request.query.city)
+        response.send(location)
+      }
+      ).catch(error => errors(error, response))
+  
+        }
+  })
 }
 // Weather
 function weatherCallBack(request, response) {
