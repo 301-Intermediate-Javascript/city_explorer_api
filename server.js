@@ -64,10 +64,11 @@ function Trail(object) {
 function locationCallBack(request, response) {
   const geoUrl = `https://us1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${request.query.city}&format=json`;
   const sqlQuery = 'SELECT * FROM locations WHERE search_query=$1';
-  const sqlValues = [cityToBeSearced];
+  const queryCity = request.query.city
+  const sqlValues = [queryCity];
   client.query(sqlQuery, sqlValues)
   .then(results => {
-
+    console.log(results.rows[0]);
     if(results.rowCount > 0){
       response.send(results.rows[0])
     }else {
@@ -91,7 +92,6 @@ function weatherCallBack(request, response) {
         return new Weather(value);
 
       })
-      console.log(weatherUrl2);
       response.send(weatherUrl2);
 
     }).catch(error => errors(error, response))
@@ -104,7 +104,6 @@ function trailCallBack(request, response) {
       const trailMap = trail.body.trails.map(value => {
         return new Trail(value);
       })
-      console.log(trailMap);
       response.send(trailMap);
     }).catch(error => errors(error, response))
 }
