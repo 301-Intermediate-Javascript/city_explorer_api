@@ -75,6 +75,9 @@ function locationCallBack(request, response) {
       superAgent.get(geoUrl)
           .then(city => {
         const location = new Location(city.body[0], request.query.city)
+        const sqlQuery = 'INSERT INTO locations (latitude, search_query, longitude, formatted_query) VALUES($1, $2, $3, $4)';
+        const sqlValues = [location.latitude, location.search_query, location.longitude, location.formatted_query];
+        client.query(sqlQuery, sqlValues);
         response.send(location)
       }
       ).catch(error => errors(error, response))
