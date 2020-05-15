@@ -59,6 +59,22 @@ function Trail(object) {
   this.condition_time = object.conditionDate.split(' ')[1];
 }
 
+// Movies Get
+
+app.get('/movies', moviesCallBack);
+
+// Movies Constructor
+
+function Movie(object){
+  this.title = object.title;
+  this.overview = object.overview;
+  this.average_votes = object.vote_average;
+  this.total_votes = object.vote_count;
+  this.image_url = `https://image.tmdb.org/t/p/w500${object.poster_path}`;
+  this.popularity = object.popularity;
+  this.released_on = object.release_date;
+}
+
 // Callback Functions
 // Location
 function locationCallBack(request, response) {
@@ -68,7 +84,6 @@ function locationCallBack(request, response) {
   const sqlValues = [queryCity];
   client.query(sqlQuery, sqlValues)
   .then(results => {
-    console.log(results.rows[0]);
     if(results.rowCount > 0){
       response.send(results.rows[0])
     }else {
@@ -99,7 +114,9 @@ function weatherCallBack(request, response) {
 
     }).catch(error => errors(error, response))
 }
+
 // Trail
+
 function trailCallBack(request, response) {
   const trailUrl = `https://www.hikingproject.com/data/get-trails?lat=${request.query.latitude}&lon=${request.query.longitude}&key=${process.env.TRAIL_API_KEY}`
   superAgent.get(trailUrl)
@@ -110,9 +127,29 @@ function trailCallBack(request, response) {
       response.send(trailMap);
     }).catch(error => errors(error, response))
 }
+
 // error
+
 function errors(error, response){
   response.send(error).status(500)
+}
+
+// Movies Callback
+
+function moviesCallBack(request, response) {
+  const moviesUrl = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&language=en-US&query=${request.query.search_query}&page=1&include_adult=false&region=US`
+  console.log(request.query);
+  superAgent.get(moviesUrl)
+    .then(movie => {
+      // console.log(movie.body);
+
+      const movieMap = movie.body.results.map(value => {
+        
+        return new Movie(value)
+      })
+      console.log(movieMap)
+      response.send(movieMap);
+    }).catch(error => errors(error, response))
 }
 
 // Run Server
