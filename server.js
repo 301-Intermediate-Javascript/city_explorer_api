@@ -3,7 +3,11 @@ const cors = require('cors');
 const superAgent = require('superagent');
 const pg = require('pg');
 require('dotenv').config();
-
+const locationCallBack = require('./Modules/location.js')
+const weatherCallBack = require('./Modules/weather.js')
+const trailCallBack = require('./Modules/trails.js')
+const moviesCallBack = require('./Modules/movies.js')
+const yelpCallBack = require('./Modules/yelp.js')
 
 // Global Variables
 
@@ -20,137 +24,21 @@ client.connect();
 
 app.get('/location', locationCallBack)
 
-// Location Constructor
-
-function Location(object, search_query) {
-  this.search_query = search_query;
-  this.formatted_query = object.display_name;
-  this.latitude = object.lat;
-  this.longitude = object.lon;
-}
-
 // Weather Get
 
 app.get('/weather', weatherCallBack);
-
-// Weather Constructor
-
-function Weather(object) {
-  this.forecast = object.weather.description;
-  this.time = new Date(object.ts * 1000).toDateString();
-}
 
 // Trails Get
 
 app.get('/trails', trailCallBack);
 
-// Weather Constructor
-
-function Trail(object) {
-  this.name = object.name;
-  this.location = object.location;
-  this.length = object.length;
-  this.stars = object.stars;
-  this.star_votes = object.starVotes;
-  this.summary = object.summary;
-  this.trail_url = object.url;
-  this.conditions = object.conditionStatus;
-  this.condition_date = object.conditionDate.split(' ')[0];
-  this.condition_time = object.conditionDate.split(' ')[1];
-}
-
 // Movies Get
 
 app.get('/movies', moviesCallBack);
 
-// Movies Constructor
+// Yelp Get
 
-function Movie(object){
-  this.title = object.title;
-  this.overview = object.overview;
-  this.average_votes = object.vote_average;
-  this.total_votes = object.vote_count;
-  this.image_url = `https://image.tmdb.org/t/p/w500${object.poster_path}`;
-  this.popularity = object.popularity;
-  this.released_on = object.release_date;
-}
-
-// Callback Functions
-// Location
-function locationCallBack(request, response) {
-  const geoUrl = `https://us1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${request.query.city}&format=json`;
-  const sqlQuery = 'SELECT * FROM locations WHERE search_query=$1';
-  const queryCity = request.query.city
-  const sqlValues = [queryCity];
-  client.query(sqlQuery, sqlValues)
-  .then(results => {
-    if(results.rowCount > 0){
-      response.send(results.rows[0])
-    }else {
-      superAgent.get(geoUrl)
-          .then(city => {
-        const location = new Location(city.body[0], request.query.city)
-        const sqlQuery = 'INSERT INTO locations (latitude, search_query, longitude, formatted_query) VALUES($1, $2, $3, $4)';
-        const sqlValues = [location.latitude, location.search_query, location.longitude, location.formatted_query];
-        client.query(sqlQuery, sqlValues);
-        response.send(location)
-      }
-      ).catch(error => errors(error, response))
-  
-        }
-  })
-}
-// Weather
-function weatherCallBack(request, response) {
-  // const weatherData = require('./data/weather.json');
-  const weatherUrl = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${request.query.latitude}&lon=${request.query.longitude}&days=7&key=${process.env.WEATHER_API_KEY}`;
-  superAgent.get(weatherUrl)
-    .then(weather => {
-      const weatherUrl2 = weather.body.data.map(value => {
-        return new Weather(value);
-
-      })
-      response.send(weatherUrl2);
-
-    }).catch(error => errors(error, response))
-}
-
-// Trail
-
-function trailCallBack(request, response) {
-  const trailUrl = `https://www.hikingproject.com/data/get-trails?lat=${request.query.latitude}&lon=${request.query.longitude}&key=${process.env.TRAIL_API_KEY}`
-  superAgent.get(trailUrl)
-    .then(trail => {
-      const trailMap = trail.body.trails.map(value => {
-        return new Trail(value);
-      })
-      response.send(trailMap);
-    }).catch(error => errors(error, response))
-}
-
-// error
-
-function errors(error, response){
-  response.send(error).status(500)
-}
-
-// Movies Callback
-
-function moviesCallBack(request, response) {
-  const moviesUrl = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIE_API_KEY}&language=en-US&query=${request.query.search_query}&page=1&include_adult=false&region=US`
-  console.log(request.query);
-  superAgent.get(moviesUrl)
-    .then(movie => {
-      // console.log(movie.body);
-
-      const movieMap = movie.body.results.map(value => {
-        
-        return new Movie(value)
-      })
-      console.log(movieMap)
-      response.send(movieMap);
-    }).catch(error => errors(error, response))
-}
+app.get('/yelp', yelpCallBack);
 
 // Run Server
 

@@ -23,6 +23,7 @@
     "express": "^4.17.1",
     "pg": "^8.2.0",
     "psql": "0.0.1",
-    "superagent": "^5.2.2"
+    "superagent": "^5.2.2",
+    "yelp-fusion": "^3.0.0"
   }
 }
